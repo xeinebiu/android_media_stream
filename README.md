@@ -53,5 +53,7 @@ Before you use the service, make sure your application is granted Overlay access
 ```
 
 ### Change logs
+    1.0.1
+    	- Rename module
     1.0.0
         - Initial Release
