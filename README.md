@@ -1,4 +1,4 @@
-## Media Streamer
+## Media Stream
 
 Stream your favorite Videos from your Android Device over Network.
 
@@ -18,7 +18,7 @@ Add it in your root build.gradle at the end of repositories:
 Step 2. Add the dependency
 
 	dependencies {
-            implementation 'com.github.xeinebiu:android_media_streamer:1.0.0'
+            implementation 'com.github.xeinebiu:android_media_stream:1.0.0'
 	}
 
 ---
