@@ -38,7 +38,7 @@ class MediaStreamService : Service() {
         startForeground(
             SERVICE_CODE,
             createNotification(
-                SERVICE_TITLE,
+                "",
                 "",
                 DEFAULT_ICON
             ).build()
@@ -145,11 +145,16 @@ class MediaStreamService : Service() {
         @DrawableRes icon: Int
     ): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(subtitle)
             .setSmallIcon(icon)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setGroup(SERVICE_CHANNEL_ID)
+
+        if (title.isNotEmpty())
+            builder.setContentTitle(title)
+
+        if (subtitle.isNotEmpty())
+            builder.setContentText(subtitle)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 SERVICE_CHANNEL_ID,
