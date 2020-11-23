@@ -25,9 +25,9 @@ Step 2. Add the dependency
 #### Register Service
 ````xml
 <service
-    android:name="com.xeinebiu.media_streamer.MediaStreamerService"
+    android:name="com.xeinebiu.media_stream.MediaStreamService"
     android:enabled="true"
-    android:label="Media Streamer" />
+    android:label="Media Stream" />
 ````
 ---
 #### Permissions
@@ -40,7 +40,7 @@ Before you use the service, make sure your application is granted Overlay access
 ---
 ### Starting the service
 ```kotlin
-       val streamUrl = MediaStreamerService.stream(
+       val streamUrl = MediaStreamService.stream(
             this,
             "Demo Video",
             Uri.parse("https://thepaciellogroup.github.io/AT-browser-tests/video/ElephantsDream.mp4"),
