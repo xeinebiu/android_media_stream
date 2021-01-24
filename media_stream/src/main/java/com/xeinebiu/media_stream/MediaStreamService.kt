@@ -38,7 +38,7 @@ class MediaStreamService : Service() {
         startForeground(
             SERVICE_CODE,
             createNotification(
-                "",
+                SERVICE_TITLE,
                 "",
                 DEFAULT_ICON
             ).build()
@@ -263,8 +263,8 @@ class MediaStreamService : Service() {
 
     companion object {
         private const val SERVICE_CHANNEL_ID = "Media Streaming"
-        private const val SERVICE_TITLE = "Popup Player"
-        private const val SERVICE_CODE = 30005
+        private const val SERVICE_TITLE = "Media Streaming"
+        private const val SERVICE_CODE = 30006
         private const val DEFAULT_PORT = 9001
         private val DEFAULT_ICON = R.drawable.ic_icon
 
