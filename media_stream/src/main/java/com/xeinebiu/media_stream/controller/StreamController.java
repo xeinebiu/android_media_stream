@@ -15,9 +15,13 @@ import com.yanzhenjie.andserver.http.HttpRequest;
 import com.yanzhenjie.andserver.http.HttpResponse;
 import com.yanzhenjie.andserver.util.MediaType;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 @RestController
@@ -81,22 +85,52 @@ public class StreamController {
     }
 
     @GetMapping("/stream/{streamId}/subtitle/{language}")
-    public String getSubtitle(
+    public void getSubtitle(
             @PathVariable("streamId") String id,
             @PathVariable("language") String language,
             HttpRequest request,
             HttpResponse response
     ) {
         Stream streamItem = getStream(id, request);
-        if (streamItem == null) return "";
+        if (streamItem == null) return;
 
         for (VttSubtitle subtitle : streamItem.getSubtitles()) {
             if (subtitle.getLanguage().equals(language)) {
-                return subtitle.getContent();
+                try {
+                    response.setBody(
+                            new StringBody(downloadSubtitleContent(subtitle.getUri().toString()),
+                                    MediaType.parseMediaType("text/vtt"))
+                    );
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
+    }
 
-        return "";
+    private String downloadSubtitleContent(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        //add headers to the connection, or check the status if desired..
+
+        // handle error response code it occurs
+        int responseCode = connection.getResponseCode();
+        InputStream inputStream;
+        if (200 <= responseCode && responseCode <= 299) {
+            inputStream = connection.getInputStream();
+        } else {
+            inputStream = connection.getErrorStream();
+        }
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+
+        StringBuilder response = new StringBuilder();
+        String currentLine;
+
+        while ((currentLine = in.readLine()) != null) response.append(currentLine).append("\n");
+
+        in.close();
+
+        return response.toString();
     }
 
     @GetMapping("/stream/{streamId}/video")

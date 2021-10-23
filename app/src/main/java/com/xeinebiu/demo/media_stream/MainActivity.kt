@@ -24,24 +24,12 @@ class MainActivity : AppCompatActivity() {
                 VttSubtitle(
                     language = "en",
                     displayLanguage = "English",
-                    content = "WEBVTT\n" +
-                            "\n" +
-                            "00:00:00.500 --> 00:00:02.000\n" +
-                            "The Web is always changing\n" +
-                            "\n" +
-                            "00:00:02.500 --> 00:00:04.300\n" +
-                            "and the way we access it is changing"
+                    uri = Uri.parse("https://gist.githubusercontent.com/samdutton/ca37f3adaf4e23679957b8083e061177/raw/e19399fbccbc069a2af4266e5120ae6bad62699a/sample.vtt")
                 ),
                 VttSubtitle(
                     language = "al",
                     displayLanguage = "Albanian",
-                    content = "WEBVTT\n" +
-                            "\n" +
-                            "00:00:00.500 --> 00:00:02.000\n" +
-                            "Web-i është gjithmonë në ndryshim\n" +
-                            "\n" +
-                            "00:00:02.500 --> 00:00:04.300\n" +
-                            "dhe mënyra se si i qasemi po ndryshon"
+                    uri = Uri.parse("https://raw.githubusercontent.com/brenopolanski/html5-video-webvtt-example/master/MIB2-subtitles-pt-BR.vtt")
                 )
             ),
             headers = HashMap()
