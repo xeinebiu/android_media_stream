@@ -4,6 +4,8 @@ import android.os.Build
 import java.net.HttpURLConnection
 import java.net.NetworkInterface
 import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Get IP address from first non-localhost interface
@@ -26,10 +28,8 @@ internal fun getIPAddress(useIPv4: Boolean): String {
                     } else {
                         if (!isIPv4) {
                             val delim = sAddr.indexOf('%') // drop ip6 zone suffix
-                            return if (delim < 0)
-                                sAddr.toUpperCase()
-                            else
-                                sAddr.substring(0, delim).toUpperCase()
+                            return if (delim < 0) sAddr.toUpperCase()
+                            else sAddr.substring(0, delim).toUpperCase()
                         }
                     }
                 }
@@ -43,26 +43,28 @@ internal fun getIPAddress(useIPv4: Boolean): String {
 /**
  * Retrieve the stream length from given [uri] and [headers]
  */
-internal fun getContentLength(uri: String, headers: Map<String, String>?): Long {
+internal suspend fun getContentLength(
+    uri: String,
+    headers: Map<String, String>?
+): Long = withContext(Dispatchers.IO) {
     val connection = createHttpURLConnection(uri, headers)
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-        connection.contentLengthLong
-    else
-        connection.contentLength.toLong()
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) connection.contentLengthLong
+    else connection.contentLength.toLong()
 }
 
 /**
  * Create a Http Connection from given [uri] and [headers]
  */
-internal fun createHttpURLConnection(
+internal suspend fun createHttpURLConnection(
     uri: String,
     headers: Map<String, String>? = null
-): HttpURLConnection {
-    val url = URL(uri)
-    val connection = url.openConnection() as HttpURLConnection
+): HttpURLConnection = withContext(Dispatchers.IO) {
+    val connection = URL(uri).openConnection() as HttpURLConnection
+
     headers?.let {
-        for (h in it)
-            connection.setRequestProperty(h.key, h.value)
+        for (h in it) connection.setRequestProperty(h.key, h.value)
     }
-    return connection
+
+    connection
 }

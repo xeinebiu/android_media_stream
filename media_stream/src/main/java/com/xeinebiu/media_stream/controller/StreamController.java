@@ -1,14 +1,16 @@
 package com.xeinebiu.media_stream.controller;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.xeinebiu.media_stream.MediaStreamService;
 import com.xeinebiu.media_stream.model.Stream;
+import com.xeinebiu.media_stream.model.VttSubtitle;
 import com.yanzhenjie.andserver.annotation.GetMapping;
 import com.yanzhenjie.andserver.annotation.PathVariable;
-import com.yanzhenjie.andserver.annotation.RequestMapping;
 import com.yanzhenjie.andserver.annotation.RestController;
 import com.yanzhenjie.andserver.framework.body.StreamBody;
+import com.yanzhenjie.andserver.framework.body.StringBody;
 import com.yanzhenjie.andserver.http.HttpRequest;
 import com.yanzhenjie.andserver.http.HttpResponse;
 import com.yanzhenjie.andserver.util.MediaType;
@@ -19,22 +21,92 @@ import java.io.OutputStream;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
 @RestController
-@RequestMapping(path = "/stream")
 public class StreamController {
 
-    @GetMapping(path = {"/video/{streamId}"})
+    @GetMapping("/stream/{streamId}")
+    public void index(
+            @PathVariable("streamId") String id,
+            HttpRequest request,
+            HttpResponse response
+    ) {
+        Stream streamItem = getStream(id, request);
+        if (streamItem == null) return;
+
+        String subtitlesHtml = createSubtitlesHtml(streamItem);
+
+        String html = "<style>body {margin:0px}</style>\n" +
+                "<link href=\"https://unpkg.com/video.js/dist/video-js.min.css\" rel=\"stylesheet\">\n" +
+                "<script src=\"https://unpkg.com/video.js/dist/video.min.js\"></script>\n" +
+                "<video\n" +
+                "    id=\"my-player\"\n" +
+                "    class=\"video-js\"\n" +
+                "    controls\n" +
+                "    preload=\"auto\"\n" +
+                "    data-setup='{\"fluid\": true}'>\n" +
+                "  <source src=\"http://192.168.1.3:9001/stream/" + id + "/video\" type=\"video/mp4\"></source>\n" +
+                subtitlesHtml +
+                "  <p class=\"vjs-no-js\">\n" +
+                "    To view this video please enable JavaScript, and consider upgrading to a\n" +
+                "    web browser that\n" +
+                "    <a href=\"https://videojs.com/html5-video-support/\" target=\"_blank\">\n" +
+                "      supports HTML5 video\n" +
+                "    </a>\n" +
+                "  </p>\n" +
+                "</video>";
+
+        response.setBody(
+                new StringBody(html, MediaType.TEXT_HTML)
+        );
+    }
+
+    @NonNull
+    private String createSubtitlesHtml(@NonNull Stream streamItem) {
+        StringBuilder sb = new StringBuilder();
+
+        for (VttSubtitle subtitle : streamItem.getSubtitles()) {
+
+            sb.append("<track kind='captions' src='/stream/")
+                    .append(streamItem.getId())
+                    .append("/subtitle/")
+                    .append(subtitle.getLanguage())
+                    .append("' srclang='")
+                    .append(subtitle.getLanguage())
+                    .append("' label='")
+                    .append(subtitle.getDisplayLanguage())
+                    .append("' default />")
+                    .append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    @GetMapping("/stream/{streamId}/subtitle/{language}")
+    public String getSubtitle(
+            @PathVariable("streamId") String id,
+            @PathVariable("language") String language,
+            HttpRequest request,
+            HttpResponse response
+    ) {
+        Stream streamItem = getStream(id, request);
+        if (streamItem == null) return "";
+
+        for (VttSubtitle subtitle : streamItem.getSubtitles()) {
+            if (subtitle.getLanguage().equals(language)) {
+                return subtitle.getContent();
+            }
+        }
+
+        return "";
+    }
+
+    @GetMapping("/stream/{streamId}/video")
     public void cast(
             @PathVariable("streamId") String id,
             HttpRequest request,
             HttpResponse response
     ) {
-        String host = request.getHeader("Host");
-        assert host != null;
-        int port = Integer.parseInt(host.split(":")[1]);
-        Stream streamItem = MediaStreamService.Companion.findStream(id, port);
-        if (streamItem == null) {
-            return;
-        }
+        Stream streamItem = getStream(id, request);
+        if (streamItem == null) return;
 
         long contentLength = streamItem.getLength();
         long start = 0, end = 0;
@@ -62,9 +134,21 @@ public class StreamController {
                 response.setHeader("Content-Range", " bytes " + start + "-" + (contentLength - 1) + "/" + contentLength);
             }
         }
+
         InputStream inputStream = streamItem.getInputStream().invoke();
         VideoStreamBody responseBody = new VideoStreamBody(inputStream, contentLength, start, end);
         response.setBody(responseBody);
+    }
+
+    @Nullable
+    private Stream getStream(
+            String id,
+            HttpRequest request
+    ) {
+        String host = request.getHeader("Host");
+        assert host != null;
+        int port = Integer.parseInt(host.split(":")[1]);
+        return MediaStreamService.Companion.findStream(id, port);
     }
 
     static class VideoStreamBody extends StreamBody {
