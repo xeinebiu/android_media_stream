@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Parcelable
 import android.webkit.URLUtil
-import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
@@ -20,22 +19,25 @@ import com.xeinebiu.media_stream.model.VttSubtitle
 import com.xeinebiu.media_stream.util.ProgressiveHttpStream
 import com.xeinebiu.media_stream.util.getContentLength
 import com.xeinebiu.media_stream.util.getIPAddress
-import com.yanzhenjie.andserver.AndServer
-import com.yanzhenjie.andserver.Server
-import java.io.File
-import java.io.InputStream
-import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
-import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import java.io.File
+import java.io.InputStream
+import kotlin.random.Random
 
 class MediaStreamService : Service() {
-    private val servers = HashMap<Int, Server>()
+    private val server by lazy {
+        StreamServer(
+            port = getString(R.string.media_stream_port).toInt(),
+            streams = {
+                STREAMS
+            }
+        )
+    }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -48,8 +50,7 @@ class MediaStreamService : Service() {
             SERVICE_CODE,
             createNotification(
                 SERVICE_TITLE,
-                "",
-                DEFAULT_ICON
+                ""
             ).build()
         )
     }
@@ -61,13 +62,16 @@ class MediaStreamService : Service() {
     ): Int {
         val action = intent?.action ?: return START_STICKY
 
-        val streamAction =
-            intent.getParcelableExtra<StreamAction>(EXTRA_ARGS) ?: return START_STICKY
+        val streamAction = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(EXTRA_ARGS, StreamAction::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(EXTRA_ARGS) ?: return START_STICKY
+        } ?: return START_STICKY
 
-        val port = streamAction.port
         when (action) {
             ACTION_STREAM -> {
-                startServer(port)
+                server.start()
 
                 streamAction.startStreaming()
             }
@@ -75,40 +79,22 @@ class MediaStreamService : Service() {
             ACTION_STOP -> {
                 streamAction.stopStreaming()
 
-                if (STREAMS[port]?.isEmpty() == true) {
-                    STREAMS.remove(port)
-
-                    stopServer(port)
-                }
-
                 if (STREAMS.isEmpty()) {
-                    stopForeground(true)
+                    server.stop()
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        stopForeground(true)
+                    }
+
                     stopSelf()
                 }
             }
         }
 
         return START_STICKY
-    }
-
-    private fun startServer(port: Int) {
-        if (servers.containsKey(port)) return
-
-        servers[port] = AndServer.webServer(this)
-            .port(port)
-            .timeout(10, TimeUnit.SECONDS)
-            .build()
-            .also {
-                it.startup()
-            }
-    }
-
-    private fun stopServer(port: Int) {
-        val server = servers[port] ?: return
-
-        server.shutdown()
-
-        servers.remove(port)
     }
 
     private fun StreamAction.startStreaming() {
@@ -127,7 +113,7 @@ class MediaStreamService : Service() {
                 subtitles = subtitles
             )
 
-            addStream(stream, port)
+            STREAMS.add(stream)
         }
     }
 
@@ -151,21 +137,23 @@ class MediaStreamService : Service() {
         }
     }
 
-    private fun StreamAction.createStreamOpenCallback(): () -> InputStream? {
+    private fun StreamAction.createStreamOpenCallback(): suspend () -> InputStream? {
         return {
-            val streamUrl = streamUri.toString()
+            withContext(Dispatchers.IO) {
+                val streamUrl = streamUri.toString()
 
-            when {
-                isOnline() -> ProgressiveHttpStream(
-                    streamUri = streamUri,
-                    headers = headers
-                )
+                when {
+                    isOnline() -> ProgressiveHttpStream(
+                        streamUri = streamUri,
+                        headers = headers
+                    )
 
-                URLUtil.isContentUrl(streamUrl) -> contentResolver.openInputStream(streamUri)
+                    URLUtil.isContentUrl(streamUrl) -> contentResolver.openInputStream(streamUri)
 
-                URLUtil.isFileUrl(streamUrl) -> File(streamUrl).inputStream()
+                    URLUtil.isFileUrl(streamUrl) -> File(streamUrl).inputStream()
 
-                else -> null
+                    else -> null
+                }
             }
         }
     }
@@ -175,18 +163,19 @@ class MediaStreamService : Service() {
     }
 
     private fun StreamAction.stopStreaming() {
-        removeStream(id = id, port = port)
+        STREAMS.removeAll {
+            it.id == this.id
+        }
 
         cancelCastNotification(id)
     }
 
     private fun createNotification(
         title: String,
-        subtitle: String,
-        @DrawableRes icon: Int
+        subtitle: String
     ): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
-            .setSmallIcon(icon)
+            .setSmallIcon(DEFAULT_ICON)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setGroup(SERVICE_CHANNEL_ID)
 
@@ -239,13 +228,12 @@ class MediaStreamService : Service() {
 
         val builder = createNotification(
             title = title,
-            subtitle = url,
-            icon = DEFAULT_ICON
+            subtitle = url
         )
 
         builder.addAction(
             R.drawable.ic_close_black_24dp,
-            getString(R.string.option_cancel),
+            getString(R.string.media_stream_option_cancel),
             cancelPendingIntent
         )
 
@@ -259,7 +247,6 @@ class MediaStreamService : Service() {
         val id: Int,
         val title: String,
         val headers: HashMap<String, String>,
-        val port: Int,
         val url: String,
         val streamUri: Uri,
         val subtitles: List<VttSubtitle>
@@ -270,17 +257,14 @@ class MediaStreamService : Service() {
         private const val SERVICE_TITLE = "Media Streaming"
         private const val SERVICE_CODE = 30006
 
-        private const val DEFAULT_PORT = 9001
-
         private val DEFAULT_ICON = R.drawable.ic_icon
 
         private const val EXTRA_ARGS = "extra_args"
 
         private const val ACTION_STREAM = "action_cast"
-
         private const val ACTION_STOP = "action_stop"
 
-        private val STREAMS = HashMap<Int, MutableList<Stream>>()
+        private val STREAMS = mutableListOf<Stream>()
 
         /**
          * Stream given [stream]
@@ -291,13 +275,12 @@ class MediaStreamService : Service() {
             title: String,
             stream: Uri,
             subtitles: List<VttSubtitle>,
-            headers: HashMap<String, String>,
-            port: Int = DEFAULT_PORT
+            headers: HashMap<String, String>
         ): String {
             val id = Random.nextInt(100, 999)
 
             val ipV4 = getIPAddress(true)
-            val url = "http://$ipV4:$port/stream/$id"
+            val url = "http://$ipV4:$${context.getString(R.string.media_stream_port)}/stream/$id"
 
             val intent = Intent(context, MediaStreamService::class.java).apply {
                 action = ACTION_STREAM
@@ -311,8 +294,7 @@ class MediaStreamService : Service() {
                     url = url,
                     streamUri = stream,
                     subtitles = subtitles,
-                    port = port,
-                    headers = headers,
+                    headers = headers
                 )
             )
 
@@ -320,45 +302,5 @@ class MediaStreamService : Service() {
 
             return url
         }
-
-        private fun addStream(
-            stream: Stream,
-            port: Int
-        ): Unit = synchronized(STREAMS) {
-            var list = STREAMS[port]
-            if (list != null)
-                list.add(stream)
-            else {
-                list = mutableListOf(stream)
-                STREAMS[port] = list
-            }
-        }
-
-        fun findStream(
-            id: String,
-            port: Int
-        ): Stream? = try {
-            val idInt = Integer.parseInt(id)
-            findStream(idInt, port)
-        } catch (e: NumberFormatException) {
-            null
-        }
-
-        private fun findStream(
-            id: Int,
-            port: Int
-        ): Stream? = STREAMS[port]?.firstOrNull { it.id == id }
-
-        private fun removeStream(
-            id: Int,
-            port: Int
-        ) {
-            val cast = findStream(id, port)
-
-            synchronized(STREAMS) {
-                STREAMS[port]?.remove(cast)
-            }
-        }
     }
 }
-

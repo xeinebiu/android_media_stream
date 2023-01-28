@@ -1,42 +1,47 @@
 package com.xeinebiu.media_stream.util
 
 import android.os.Build
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.NetworkInterface
 import java.net.URL
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Get IP address from first non-localhost interface
  * @param useIPv4   true=return ipv4, false=return ipv6
- * @return  address or empty string
+ * @return address or empty string
  * @ref https://stackoverflow.com/a/13007325
  */
 internal fun getIPAddress(useIPv4: Boolean): String {
     try {
-        val interfaces = NetworkInterface.getNetworkInterfaces().toList()
+        val interfaces = NetworkInterface
+            .getNetworkInterfaces()
+            .toList()
+
         for (networkInterface in interfaces) {
             val inetAddresses = networkInterface.inetAddresses.toList()
+
             for (address in inetAddresses) {
                 if (!address.isLoopbackAddress) {
-                    val sAddr: String = address.hostAddress
-                    //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                    val isIPv4 = sAddr.indexOf(':') < 0
+                    val hostAddress = address.hostAddress ?: continue
+
+                    val isIPv4 = hostAddress.indexOf(':') < 0
                     if (useIPv4) {
-                        if (isIPv4) return sAddr
+                        if (isIPv4) return hostAddress
                     } else {
                         if (!isIPv4) {
-                            val delim = sAddr.indexOf('%') // drop ip6 zone suffix
-                            return if (delim < 0) sAddr.toUpperCase()
-                            else sAddr.substring(0, delim).toUpperCase()
+                            val delimiter = hostAddress.indexOf('%') // drop ip6 zone suffix
+                            return if (delimiter < 0) hostAddress.uppercase()
+                            else hostAddress.substring(0, delimiter).uppercase()
                         }
                     }
                 }
             }
         }
     } catch (ignored: Exception) {
-    } // for now eat exceptions
+    }
+
     return ""
 }
 
