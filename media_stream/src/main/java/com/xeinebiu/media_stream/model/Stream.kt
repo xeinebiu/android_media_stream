@@ -7,5 +7,5 @@ data class Stream(
     val title: String,
     val length: Long,
     val subtitles: List<VttSubtitle>,
-    val inputStream: () -> InputStream?
+    val inputStream: suspend () -> InputStream?
 )

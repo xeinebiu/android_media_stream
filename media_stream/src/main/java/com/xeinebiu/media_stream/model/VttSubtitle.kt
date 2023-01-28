@@ -8,5 +8,6 @@ import kotlinx.parcelize.Parcelize
 data class VttSubtitle(
     val language: String,
     val displayLanguage: String,
-    val uri: Uri
+    val uri: Uri,
+    val headers: Map<String, String>?
 ) : Parcelable

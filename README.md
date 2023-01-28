@@ -18,7 +18,7 @@ Add it in your root build.gradle at the end of repositories:
 Step 2. Add the dependency
 
 	dependencies {
-            implementation 'com.github.xeinebiu:android_media_stream:1.2.0'
+            implementation 'com.github.xeinebiu:android_media_stream:1.3.0'
 	}
 
 ---
@@ -53,6 +53,11 @@ Before you use the service, make sure your application is granted Overlay access
 ```
 
 ### Change logs
+    1.3.0
+        - Use Ktor as embeded server
+        - Fix video not playing
+        - Move port to resources for overwrite possibilities
+        - Add headers for subtitles
     1.2.0
         - Lazy load subtitles
     1.1.0

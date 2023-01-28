@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="option_cancel">Cancel</string>
+    <string name="media_stream_option_cancel">Cancel</string>
+
+    <string name="media_stream_port">9001</string>
 </resources>

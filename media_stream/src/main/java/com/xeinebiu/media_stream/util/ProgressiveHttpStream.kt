@@ -1,15 +1,15 @@
 package com.xeinebiu.media_stream.util
 
 import android.net.Uri
-import java.io.InputStream
 import kotlinx.coroutines.runBlocking
+import java.io.InputStream
 
 internal class ProgressiveHttpStream(
     private val streamUri: Uri,
     private val headers: HashMap<String, String>?
 ) : InputStream() {
 
-    var inputStream = runBlocking {
+    private var inputStream = runBlocking {
         createHttpURLConnection(
             streamUri.toString(),
             headers

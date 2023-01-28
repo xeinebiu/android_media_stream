@@ -3,4 +3,10 @@
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application>
+        <service
+            android:name=".MediaStreamService"
+            android:exported="false" />
+    </application>
 </manifest>
