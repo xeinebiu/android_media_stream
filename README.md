@@ -22,14 +22,6 @@ Step 2. Add the dependency
 	}
 
 ---
-#### Register Service
-````xml
-<service
-    android:name="com.xeinebiu.media_stream.MediaStreamService"
-    android:enabled="true"
-    android:label="Media Stream" />
-````
----
 #### Permissions
 Before you use the service, make sure your application is granted Overlay access.
 ```xml
