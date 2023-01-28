@@ -22,14 +22,6 @@ Step 2. Add the dependency
 	}
 
 ---
-#### Permissions
-Before you use the service, make sure your application is granted Overlay access.
-```xml
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-```
-
----
 ### Starting the service
 ```kotlin
        val streamUrl = MediaStreamService.stream(
