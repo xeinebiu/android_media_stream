@@ -35,7 +35,7 @@ class MediaStreamService : Service() {
             port = getString(R.string.media_stream_port).toInt(),
             streams = {
                 STREAMS
-            }
+            },
         )
     }
 
@@ -50,15 +50,15 @@ class MediaStreamService : Service() {
             SERVICE_CODE,
             createNotification(
                 SERVICE_TITLE,
-                ""
-            ).build()
+                "",
+            ).build(),
         )
     }
 
     override fun onStartCommand(
         intent: Intent?,
         flags: Int,
-        startId: Int
+        startId: Int,
     ): Int {
         val action = intent?.action ?: return START_STICKY
 
@@ -110,7 +110,7 @@ class MediaStreamService : Service() {
                 title = title,
                 length = length,
                 inputStream = streamOpenCallback,
-                subtitles = subtitles
+                subtitles = subtitles,
             )
 
             STREAMS.add(stream)
@@ -123,14 +123,14 @@ class MediaStreamService : Service() {
         return when {
             isOnline() -> getContentLength(
                 uri = streamUrl,
-                headers = headers
+                headers = headers,
             )
 
             URLUtil.isFileUrl(streamUrl) -> File(streamUrl).length()
 
             URLUtil.isContentUrl(streamUrl) -> DocumentFile.fromTreeUri(
                 this@MediaStreamService,
-                streamUri
+                streamUri,
             )?.length() ?: 0
 
             else -> 0
@@ -145,7 +145,7 @@ class MediaStreamService : Service() {
                 when {
                     isOnline() -> ProgressiveHttpStream(
                         streamUri = streamUri,
-                        headers = headers
+                        headers = headers,
                     )
 
                     URLUtil.isContentUrl(streamUrl) -> contentResolver.openInputStream(streamUri)
@@ -172,7 +172,7 @@ class MediaStreamService : Service() {
 
     private fun createNotification(
         title: String,
-        subtitle: String
+        subtitle: String,
     ): NotificationCompat.Builder {
         val builder = NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
             .setSmallIcon(DEFAULT_ICON)
@@ -187,13 +187,13 @@ class MediaStreamService : Service() {
             val channel = NotificationChannel(
                 SERVICE_CHANNEL_ID,
                 SERVICE_CHANNEL_ID,
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_DEFAULT,
             )
 
             channel.setSound(null, null)
 
             val notificationManager = getSystemService(
-                Context.NOTIFICATION_SERVICE
+                Context.NOTIFICATION_SERVICE,
             ) as NotificationManager
 
             notificationManager.createNotificationChannel(channel)
@@ -212,7 +212,7 @@ class MediaStreamService : Service() {
     private fun StreamAction.showCastNotification() {
         val cancelIntent = Intent(
             this@MediaStreamService,
-            MediaStreamService::class.java
+            MediaStreamService::class.java,
         ).apply {
             action = ACTION_STOP
         }.also {
@@ -223,18 +223,18 @@ class MediaStreamService : Service() {
             this@MediaStreamService,
             System.currentTimeMillis().toInt(),
             cancelIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val builder = createNotification(
             title = title,
-            subtitle = url
+            subtitle = url,
         )
 
         builder.addAction(
             R.drawable.ic_close_black_24dp,
             getString(R.string.media_stream_option_cancel),
-            cancelPendingIntent
+            cancelPendingIntent,
         )
 
         builder.setOngoing(true)
@@ -249,7 +249,7 @@ class MediaStreamService : Service() {
         val headers: HashMap<String, String>,
         val url: String,
         val streamUri: Uri,
-        val subtitles: List<VttSubtitle>
+        val subtitles: List<VttSubtitle>,
     ) : Parcelable
 
     companion object {
@@ -275,7 +275,7 @@ class MediaStreamService : Service() {
             title: String,
             stream: Uri,
             subtitles: List<VttSubtitle>,
-            headers: HashMap<String, String>
+            headers: HashMap<String, String>,
         ): String {
             val id = Random.nextInt(100, 999)
 
@@ -294,8 +294,8 @@ class MediaStreamService : Service() {
                     url = url,
                     streamUri = stream,
                     subtitles = subtitles,
-                    headers = headers
-                )
+                    headers = headers,
+                ),
             )
 
             ContextCompat.startForegroundService(context, intent)

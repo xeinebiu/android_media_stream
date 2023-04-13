@@ -25,16 +25,16 @@ class MainActivity : AppCompatActivity() {
                     language = "en",
                     displayLanguage = "English",
                     uri = Uri.parse("https://gist.githubusercontent.com/samdutton/ca37f3adaf4e23679957b8083e061177/raw/e19399fbccbc069a2af4266e5120ae6bad62699a/sample.vtt"),
-                    headers = null
+                    headers = null,
                 ),
                 VttSubtitle(
                     language = "al",
                     displayLanguage = "Albanian",
                     uri = Uri.parse("https://raw.githubusercontent.com/brenopolanski/html5-video-webvtt-example/master/MIB2-subtitles-pt-BR.vtt"),
-                    headers = null
-                )
+                    headers = null,
+                ),
             ),
-            headers = HashMap()
+            headers = HashMap(),
         )
         AlertDialog.Builder(this)
             .setTitle("Stream")
