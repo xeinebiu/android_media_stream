@@ -6,13 +6,13 @@ import java.io.InputStream
 
 internal class ProgressiveHttpStream(
     private val streamUri: Uri,
-    private val headers: HashMap<String, String>?
+    private val headers: HashMap<String, String>?,
 ) : InputStream() {
 
     private var inputStream = runBlocking {
         createHttpURLConnection(
             streamUri.toString(),
-            headers
+            headers,
         ).inputStream!!
     }
 
@@ -39,7 +39,7 @@ internal class ProgressiveHttpStream(
         this.inputStream = runBlocking {
             createHttpURLConnection(
                 streamUri.toString(),
-                rangeHeader
+                rangeHeader,
             ).inputStream
         }
 

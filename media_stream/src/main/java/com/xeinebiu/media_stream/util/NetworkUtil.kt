@@ -32,8 +32,11 @@ internal fun getIPAddress(useIPv4: Boolean): String {
                     } else {
                         if (!isIPv4) {
                             val delimiter = hostAddress.indexOf('%') // drop ip6 zone suffix
-                            return if (delimiter < 0) hostAddress.uppercase()
-                            else hostAddress.substring(0, delimiter).uppercase()
+                            return if (delimiter < 0) {
+                                hostAddress.uppercase()
+                            } else {
+                                hostAddress.substring(0, delimiter).uppercase()
+                            }
                         }
                     }
                 }
@@ -50,12 +53,15 @@ internal fun getIPAddress(useIPv4: Boolean): String {
  */
 internal suspend fun getContentLength(
     uri: String,
-    headers: Map<String, String>?
+    headers: Map<String, String>?,
 ): Long = withContext(Dispatchers.IO) {
     val connection = createHttpURLConnection(uri, headers)
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) connection.contentLengthLong
-    else connection.contentLength.toLong()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        connection.contentLengthLong
+    } else {
+        connection.contentLength.toLong()
+    }
 }
 
 /**
@@ -63,7 +69,7 @@ internal suspend fun getContentLength(
  */
 internal suspend fun createHttpURLConnection(
     uri: String,
-    headers: Map<String, String>? = null
+    headers: Map<String, String>? = null,
 ): HttpURLConnection = withContext(Dispatchers.IO) {
     val connection = URL(uri).openConnection() as HttpURLConnection
 

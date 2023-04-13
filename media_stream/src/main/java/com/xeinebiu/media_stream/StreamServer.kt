@@ -25,7 +25,7 @@ import java.io.InputStream
 
 internal class StreamServer(
     private val port: Int,
-    private val streams: () -> List<Stream>
+    private val streams: () -> List<Stream>,
 ) {
     private var server: NettyApplicationEngine? = null
 
@@ -71,7 +71,7 @@ internal class StreamServer(
 
             call.respondText(
                 contentType = ContentType.parse("text/html"),
-                text = html
+                text = html,
             )
         }
     }
@@ -88,7 +88,7 @@ internal class StreamServer(
 
                         call.respondText(
                             contentType = ContentType.parse("text/vtt"),
-                            text = subtitleContent
+                            text = subtitleContent,
                         )
                     }
                 }
@@ -114,12 +114,12 @@ internal class StreamServer(
             if (rangeStart > 0) {
                 call.response.header(
                     "Content-Range",
-                    "bytes $rangeStart-$rangeEnd/$contentLength"
+                    "bytes $rangeStart-$rangeEnd/$contentLength",
                 )
             } else {
                 call.response.header(
                     "Content-Range",
-                    "bytes " + rangeStart + "-" + (contentLength - 1) + "/" + contentLength
+                    "bytes " + rangeStart + "-" + (contentLength - 1) + "/" + contentLength,
                 )
             }
 
@@ -129,8 +129,8 @@ internal class StreamServer(
                 VideoWriteChannelContent(
                     stream = stream,
                     rangeStart = rangeStart,
-                    rangeEnd = rangeEnd
-                )
+                    rangeEnd = rangeEnd,
+                ),
             )
         }
     }
@@ -153,11 +153,11 @@ internal class StreamServer(
     }
 
     private suspend fun downloadSubtitleContent(
-        subtitle: VttSubtitle
+        subtitle: VttSubtitle,
     ): String = withContext(Dispatchers.IO) {
         val connection = createHttpURLConnection(
             uri = subtitle.uri.toString(),
-            headers = subtitle.headers
+            headers = subtitle.headers,
         )
 
         val responseCode: Int = connection.responseCode
@@ -175,7 +175,7 @@ internal class StreamServer(
     private class VideoWriteChannelContent(
         private val stream: Stream,
         private val rangeStart: Long,
-        private val rangeEnd: Long
+        private val rangeEnd: Long,
     ) : OutgoingContent.WriteChannelContent() {
 
         override suspend fun writeTo(channel: ByteWriteChannel) {
@@ -188,7 +188,7 @@ internal class StreamServer(
                 var len = 0
                 var total = 0
                 while (rangeEnd > total && inputStream.read(buffer)
-                    .also { len = it } != -1
+                        .also { len = it } != -1
                 ) {
                     channel.writeFully(buffer, 0, len)
                     total += len
