@@ -18,7 +18,7 @@ Add it in your root build.gradle at the end of repositories:
 Step 2. Add the dependency
 
 	dependencies {
-            implementation 'com.github.xeinebiu:android_media_stream:1.5.0'
+            implementation 'com.github.xeinebiu:android_media_stream:1.6.0'
 	}
 
 ---
@@ -37,6 +37,8 @@ Step 2. Add the dependency
 ```
 
 ### Change logs
+    1.6.0
+        - Update dependencies
     1.5.0
         - Update dependencies
     1.4.0
